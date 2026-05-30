@@ -12,6 +12,7 @@ app.add_middleware(
 )
 
 app.include_router(clients.router)
+app.include_router(cases.router)
 
 @app.get("/")
 def root():
