@@ -69,6 +69,50 @@ def get_clients():
 
     return clients
 
+@router.patch("/clients/{client_id}")
+def update_client(client_id: int, updates: dict):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id FROM clients WHERE id = %s", (client_id,))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    allowed = ["name", "company", "city", "contact_person", "phone", "email"]
+    fields = []
+    values = []
+
+    for key in allowed:
+        if key in updates:
+            fields.append(f"{key} = %s")
+            values.append(updates[key])
+
+    if not fields:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+
+    values.append(client_id)
+
+    cur.execute(f"""
+        UPDATE clients SET {', '.join(fields)}
+        WHERE id = %s
+        RETURNING id, name, company, city, contact_person, phone, email
+    """, values)
+
+    updated = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {
+        "id": updated[0],
+        "name": updated[1],
+        "company": updated[2],
+        "city": updated[3],
+        "contact_person": updated[4],
+        "phone": updated[5],
+        "email": updated[6]
+    }
+
 
 @router.delete("/clients/{client_id}", status_code=204)
 def delete_client(client_id: int):

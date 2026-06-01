@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { getCase, updateCase, deleteCase } from "@/lib/api"
-import { ArrowLeft, Trash2 } from "lucide-react"
+import { getCase, updateCase, deleteCase, updateCaseDetails } from "@/lib/api"
+import { ArrowLeft, Trash2, Pencil, X, Check } from "lucide-react"
 
 const statusColors = {
     "New": { bg: "#e0f2fe", color: "#0369a1" },
@@ -21,14 +21,23 @@ export default function CaseDetailPage() {
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
     const [deleting, setDeleting] = useState(false)
+    const [editing, setEditing] = useState(false)
+    const [editForm, setEditForm] = useState({})
 
-    useEffect(() => {
-        getCase(id).then(data => {
-            setCaseData(data)
-            setStatus(data.status)
-            setNotes(data.notes || "")
+    async function load() {
+        const data = await getCase(id)
+        setCaseData(data)
+        setStatus(data.status)
+        setNotes(data.notes || "")
+        setEditForm({
+            invoice_number: data.invoice_number,
+            amount: data.amount,
+            invoice_date: data.invoice_date,
+            due_date: data.due_date
         })
-    }, [id])
+    }
+
+    useEffect(() => { load() }, [id])
 
     async function handleSave() {
         setSaving(true)
@@ -43,6 +52,15 @@ export default function CaseDetailPage() {
         setDeleting(true)
         await deleteCase(id)
         router.push("/cases")
+    }
+
+    async function handleDetailsSave() {
+        await updateCaseDetails(id, {
+            ...editForm,
+            amount: parseFloat(editForm.amount)
+        })
+        setEditing(false)
+        await load()
     }
 
     if (!caseData) return (
@@ -96,21 +114,66 @@ export default function CaseDetailPage() {
             </div>
 
             <div className="card" style={{ marginBottom: "1rem" }}>
-                <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
-                    {[
-                        { label: "Amount", value: "₹" + parseFloat(caseData.amount).toLocaleString("en-IN") },
-                        { label: "Invoice Date", value: new Date(caseData.invoice_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
-                        { label: "Due Date", value: new Date(caseData.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
-                        { label: "Client", value: caseData.client_name },
-                        { label: "Company", value: caseData.company },
-                        { label: "Opened On", value: new Date(caseData.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
-                    ].map(({ label, value }) => (
-                        <div key={label}>
-                            <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "3px" }}>{label}</p>
-                            <p style={{ fontSize: "0.9rem", fontWeight: "500", color: "var(--text-primary)" }}>{value}</p>
-                        </div>
-                    ))}
+                <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1rem" }}>
+                    <p style={{ fontSize: "0.82rem", fontWeight: "600", color: "var(--text-secondary)" }}>CASE DETAILS</p>
+                    <button onClick={() => setEditing(e => !e)} style={{
+                        background: "transparent", border: "none",
+                        color: "var(--text-secondary)", cursor: "pointer",
+                        display: "flex", alignItems: "center", gap: "4px",
+                        fontSize: "0.82rem"
+                    }}>
+                        {editing ? <><X size={14} /> Cancel</> : <><Pencil size={14} /> Edit</>}
+                    </button>
                 </div>
+
+                {editing ? (
+                    <div style={{ display: "flex", flexDirection: "column", gap: "0.75rem" }}>
+                        <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "0.75rem" }}>
+                            <div>
+                                <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Invoice Number</label>
+                                <input value={editForm.invoice_number}
+                                    onChange={e => setEditForm(p => ({ ...p, invoice_number: e.target.value }))} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Amount (₹)</label>
+                                <input type="number" value={editForm.amount}
+                                    onChange={e => setEditForm(p => ({ ...p, amount: e.target.value }))} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Invoice Date</label>
+                                <input type="date" value={editForm.invoice_date}
+                                    onChange={e => setEditForm(p => ({ ...p, invoice_date: e.target.value }))} />
+                            </div>
+                            <div>
+                                <label style={{ fontSize: "0.78rem", color: "var(--text-secondary)", display: "block", marginBottom: "4px" }}>Due Date</label>
+                                <input type="date" value={editForm.due_date}
+                                    onChange={e => setEditForm(p => ({ ...p, due_date: e.target.value }))} />
+                            </div>
+                        </div>
+                        <div style={{ display: "flex", justifyContent: "flex-end" }}>
+                            <button className="btn-primary" onClick={handleDetailsSave}
+                                style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                                <Check size={15} /> Save Details
+                            </button>
+                        </div>
+                    </div>
+                ) : (
+                    <div style={{ display: "grid", gridTemplateColumns: "1fr 1fr", gap: "1.25rem" }}>
+                        {[
+                            { label: "Amount", value: "₹" + parseFloat(caseData.amount).toLocaleString("en-IN") },
+                            { label: "Invoice Date", value: new Date(caseData.invoice_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
+                            { label: "Due Date", value: new Date(caseData.due_date).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
+                            { label: "Client", value: caseData.client_name },
+                            { label: "Company", value: caseData.company },
+                            { label: "Opened On", value: new Date(caseData.created_at).toLocaleDateString("en-IN", { day: "numeric", month: "short", year: "numeric" }) },
+                        ].map(({ label, value }) => (
+                            <div key={label}>
+                                <p style={{ fontSize: "0.75rem", color: "var(--text-secondary)", marginBottom: "3px" }}>{label}</p>
+                                <p style={{ fontSize: "0.9rem", fontWeight: "500", color: "var(--text-primary)" }}>{value}</p>
+                            </div>
+                        ))}
+                    </div>
+                )}
             </div>
 
             <div className="card" style={{ display: "flex", flexDirection: "column", gap: "1rem" }}>

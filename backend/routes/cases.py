@@ -179,3 +179,46 @@ def delete_case(case_id: int):
     conn.commit()
     cur.close()
     conn.close()
+
+@router.patch("/cases/{case_id}/details")
+def update_case_details(case_id: int, updates: dict):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id FROM cases WHERE id = %s", (case_id,))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    allowed = ["invoice_number", "amount", "invoice_date", "due_date"]
+    fields = []
+    values = []
+
+    for key in allowed:
+        if key in updates:
+            fields.append(f"{key} = %s")
+            values.append(updates[key])
+
+    if not fields:
+        raise HTTPException(status_code=400, detail="Nothing to update")
+
+    fields.append("updated_at = NOW()")
+    values.append(case_id)
+
+    cur.execute(f"""
+        UPDATE cases SET {', '.join(fields)}
+        WHERE id = %s
+        RETURNING id, invoice_number, amount, invoice_date, due_date
+    """, values)
+
+    updated = cur.fetchone()
+    conn.commit()
+    cur.close()
+    conn.close()
+
+    return {
+        "id": updated[0],
+        "invoice_number": updated[1],
+        "amount": str(updated[2]),
+        "invoice_date": str(updated[3]),
+        "due_date": str(updated[4])
+    }

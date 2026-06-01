@@ -50,3 +50,19 @@ export async function deleteCase(id) {
 export async function deleteClient(id) {
   await fetch(`${BASE_URL}/clients/${id}`, { method: "DELETE" });
 }
+export async function updateClient(id, data) {
+  const res = await fetch(`${BASE_URL}/clients/${id}`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
+export async function updateCaseDetails(id, data) {
+  const res = await fetch(`${BASE_URL}/cases/${id}/details`, {
+    method: "PATCH",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(data),
+  });
+  return res.json();
+}
