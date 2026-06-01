@@ -43,3 +43,10 @@ export async function updateCase(id, data) {
   });
   return res.json();
 }
+export async function deleteCase(id) {
+  await fetch(`${BASE_URL}/cases/${id}`, { method: "DELETE" });
+}
+
+export async function deleteClient(id) {
+  await fetch(`${BASE_URL}/clients/${id}`, { method: "DELETE" });
+}

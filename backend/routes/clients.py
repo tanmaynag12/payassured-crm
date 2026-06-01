@@ -68,3 +68,18 @@ def get_clients():
         })
 
     return clients
+
+
+@router.delete("/clients/{client_id}", status_code=204)
+def delete_client(client_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id FROM clients WHERE id = %s", (client_id,))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Client not found")
+
+    cur.execute("DELETE FROM clients WHERE id = %s", (client_id,))
+    conn.commit()
+    cur.close()
+    conn.close()

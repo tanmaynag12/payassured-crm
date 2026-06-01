@@ -166,3 +166,16 @@ def update_case(case_id: int, updates: dict):
         "notes": updated[2],
         "updated_at": str(updated[3])
     }
+@router.delete("/cases/{case_id}", status_code=204)
+def delete_case(case_id: int):
+    conn = get_connection()
+    cur = conn.cursor()
+
+    cur.execute("SELECT id FROM cases WHERE id = %s", (case_id,))
+    if not cur.fetchone():
+        raise HTTPException(status_code=404, detail="Case not found")
+
+    cur.execute("DELETE FROM cases WHERE id = %s", (case_id,))
+    conn.commit()
+    cur.close()
+    conn.close()

@@ -2,8 +2,8 @@
 
 import { useEffect, useState } from "react"
 import { useRouter, useParams } from "next/navigation"
-import { getCase, updateCase } from "@/lib/api"
-import { ArrowLeft } from "lucide-react"
+import { getCase, updateCase, deleteCase } from "@/lib/api"
+import { ArrowLeft, Trash2 } from "lucide-react"
 
 const statusColors = {
     "New": { bg: "#e0f2fe", color: "#0369a1" },
@@ -20,6 +20,7 @@ export default function CaseDetailPage() {
     const [notes, setNotes] = useState("")
     const [saving, setSaving] = useState(false)
     const [saved, setSaved] = useState(false)
+    const [deleting, setDeleting] = useState(false)
 
     useEffect(() => {
         getCase(id).then(data => {
@@ -37,6 +38,13 @@ export default function CaseDetailPage() {
         setTimeout(() => setSaved(false), 2000)
     }
 
+    async function handleDelete() {
+        if (!confirm("Are you sure you want to delete this case?")) return
+        setDeleting(true)
+        await deleteCase(id)
+        router.push("/cases")
+    }
+
     if (!caseData) return (
         <div style={{ color: "var(--text-secondary)", padding: "2rem" }}>Loading...</div>
     )
@@ -46,10 +54,21 @@ export default function CaseDetailPage() {
 
     return (
         <div style={{ maxWidth: "680px" }}>
-            <button onClick={() => router.back()} className="btn-ghost"
-                style={{ display: "flex", alignItems: "center", gap: "6px", marginBottom: "1.5rem" }}>
-                <ArrowLeft size={15} /> Back
-            </button>
+            <div style={{ display: "flex", justifyContent: "space-between", alignItems: "center", marginBottom: "1.5rem" }}>
+                <button onClick={() => router.back()} className="btn-ghost"
+                    style={{ display: "flex", alignItems: "center", gap: "6px" }}>
+                    <ArrowLeft size={15} /> Back
+                </button>
+                <button onClick={handleDelete} disabled={deleting} style={{
+                    display: "flex", alignItems: "center", gap: "6px",
+                    background: "transparent", border: "1px solid #dc2626",
+                    color: "#dc2626", padding: "0.5rem 1rem",
+                    borderRadius: "7px", cursor: "pointer", fontSize: "0.875rem"
+                }}>
+                    <Trash2 size={15} />
+                    {deleting ? "Deleting..." : "Delete Case"}
+                </button>
+            </div>
 
             <div style={{ display: "flex", justifyContent: "space-between", alignItems: "flex-start", marginBottom: "1.75rem" }}>
                 <div>
