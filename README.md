@@ -113,11 +113,12 @@ App will be running at `http://localhost:3000`
 
 Screenshots are available in the `/screenshots` folder:
 
-- Dashboard
-- Cases List
-- Case Create
-- Case Detail
-- Clients Page
+- dashboard.png
+- cases_list.png
+- cases_create.png
+- cases_detail.png
+- clients_list.png
+- client_create.png
 
 ## Environment Variables
 
